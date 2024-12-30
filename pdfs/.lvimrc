@@ -1,0 +1,14 @@
+function! GitACP()
+  silent! execute '!cd ~/github_page'
+  silent! execute '!git add -A  > /dev/null 2>&1'
+  let commitMsg = "Commit on " . strftime("%Y-%m-%d %H:%M:%S")
+  "silent! execute '!echo ' . shellescape(commitMsg) . ' >> log.txt'
+  silent! execute '!git commit -m "' . shellescape(commitMsg) . '" > /dev/null 2>&1'
+  silent! execute '!git push > /dev/null 2>&1'
+endfunction
+
+
+augroup AutoGit | autocmd!
+  autocmd VimLeave * call GitACP() 
+augroup END
+
