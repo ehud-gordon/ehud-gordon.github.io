@@ -13,7 +13,7 @@
 \[
   p(z|x) = \frac{p(x,z)}{p(x)} = \frac{p(x|z) p(z)}{\int_{\mathcal{Z}} p(x,z) \d{z} }
 \]
-  Since the marginal likelihood $p(x)$ is intractable, we instead approximate the posterior $p(z|x)$ with a simpler, tractable distribution $q(z| \lambda)$, and we wish to minimize the KL divergence $KL \Big( q(z | \lambda) \, || \, p(z | x) \Big)$, or equivalently maximize the Evidence Lower Bound (ELBO):
+Since the marginal likelihood $p(x)$ is intractable, we instead approximate the posterior $p(z|x)$ with a simpler, tractable distribution $q(z| \lambda)$, and we wish to minimize the KL divergence $KL \Big( q(z | \lambda) \, || \, p(z | x) \Big)$, or equivalently maximize the Evidence Lower Bound (ELBO):
 
 
 \end{definition}
@@ -482,7 +482,6 @@ The canonical VAE can be written as:
 \[
   \mathcal{L}(\theta, \phi) := \int_{\mathcal{X}} \Big\{ - E_{q_{\phi}(\bm{z} | \bm{x})} \left[ \log p_{\theta}(\bm{x} | \bm{z}) \right] + KL[q_{\phi}(\bm{z} | \bm{x})] \Big\} \mu_{gt}(d \bm{x}) 
 \] 
-
 
 \section{Summary}
 Assume we have $n$ data vectors,  $\bm{x}_1, \ldots  \bm{x}_n$, each $\bm{x}_i$ a $d$-vector (for example images). We assume the data was generated via a latent variable model (VLM): each image $\bm{x}_i$ was generated  There is a latent space $\mathcal{Z} \subseteq \mathbb{R}^{k}$, and $\bm{z} \sim p_{\bm{z}}$. 
