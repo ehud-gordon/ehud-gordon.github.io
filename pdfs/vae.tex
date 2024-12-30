@@ -484,7 +484,14 @@ The canonical VAE can be written as:
 \] 
 
 \section{Summary}
-Assume we have $n$ data vectors,  $\bm{x}_1, \ldots  \bm{x}_n$, each $\bm{x}_i$ a $d$-vector (for example images). We assume the data was generated via a latent variable model (VLM): each image $\bm{x}_i$ was generated  There is a latent space $\mathcal{Z} \subseteq \mathbb{R}^{k}$, and $\bm{z} \sim p_{\bm{z}}$. 
+Assume we have $n$ data vectors (e.g. images),  $\bm{x}_1, \ldots  \bm{x}_n$, each $\bm{x}_i \in \mathbb{R}^{d}$. 
+We assume the data was generated via a latent variable model: There is a latent space $\mathcal{Z} \subseteq \mathbb{R}^{k}$, and $\bm{z} \sim p_{\bm{z}}$. 
+We assume there is some continuous, invertible function $\bm{f} : \mathcal{Z} \to \mathcal{X}$, that generates the data, i.e.  $\bm{f}(\bm{z}) = \bm{x}$. 
+This induces a distribution $p ^{\ast}(\bm{x})$ over the data space $\mathcal{X}$, which we wish to learn / estimate from the observed data $\bm{x}_1, \ldots, \bm{x}_n$. 
+We assume $p ^{\ast}(\bm{x})$ belongs to some parametric family $\Theta$, and we wish to learn $\theta$ of $p_{\theta}(\bm{x})$. 
+
+Unfortunately, common methods like MLE can estimate $\theta$ only when $\Theta$ is a very simple family (like Gaussian), which is an unrealistic assumption for images. 
+
 
 
 \end{document}
