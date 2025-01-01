@@ -400,7 +400,6 @@ There are two problems when trying to optimize~\cref{eq:DoreschEq1}:
   \item How to choose define the latent variables $\bm{z}$, i.e. decide what information they decode? The answer is: (multi-variable) Gaussian distribution. 
   This is because, a sufficiently complicated function $f$ can turn a Gaussian into every desired probability distribution, as is demonstrated by Inverse transform sampling. 
   For $f$ that is a  NN, we can imagine the first few layers turning the normally distributed $\bm{z}$'s to the latent vectors (like digit identity, stroke weight, angle, etc.), and then using later layers to map those latent values to a fully-rendered digit. 
-\begin{figure}[H] \centering \includegraphics[height=0.3\textheight,width=0.9\textwidth,keepaspectratio]{inverseTransformSampling}   \end{figure}
 
   \item Conceptually, it easy to approximate $P(X)$  - we sample a large value of $z$ values $\left\{ \bm{z}_1, \ldots, \bm{z}_n \right\}$, and compute $P(X) \approx \frac{1}{n} \sum_{i} P(X| \bm{z}_i)$. 
   However, for high dimensional spaces, the number of samples of $\bm{z}$ might need to be very large before we have an accurate estimate of $P(X)$. 
@@ -483,16 +482,119 @@ The canonical VAE can be written as:
   \mathcal{L}(\theta, \phi) := \int_{\mathcal{X}} \Big\{ - E_{q_{\phi}(\bm{z} | \bm{x})} \left[ \log p_{\theta}(\bm{x} | \bm{z}) \right] + KL[q_{\phi}(\bm{z} | \bm{x})] \Big\} \mu_{gt}(d \bm{x}) 
 \] 
 
+\begin{definition}[Pushforward probability measure]  Let $\mathcal{Z} \subseteq \mathbb{R}^{d}$ be a space, and $\mathcal{X} \subseteq \mathbb{R}^{d}$ a (data) space. A probability measure $\nu$ on $\mathcal{Z}$ and a (measurable) function:
+  \[
+    \bm{f}: \mathcal{Z} \to \mathcal{X}
+  \]
+  together induce a probability measure on $\mathcal{X}$, called the pushforward measure, denoted by $\bm{f}_{\#} \nu$. Be definition, for any measurable set $A \subseteq \mathcal{X}$, we define:
+\[
+  \bm{f}_{\#} \nu(A) = \nu \Big( \left\{ \bm{z} \in \mathcal{Z} \, : \, \bm{f}(\bm{z}) \in A  \right\}\Big)
+\]
+  equivalently, if $\bm{z}$ is a random variable distributed according to $\nu$, then $\bm{f}_{\#}(\bm{z})$ is a random variable distributed according to $\bm{f}_{\#} \nu$. 
+\end{definition}
+
+\begin{definition}[Mixture Distribution]  A \textit{mixture distribution} is any distribution that arises by averaging or integrating over a family of component distributions. Formally, let $\Theta$ be an index set, and let $\left\{ Q_{\theta} \right\}_{\theta \in \Theta}$ be a family of probability measures on some measurable space $\mathcal{X}$. Let $\pi$ be a probability measure on the index set $\Theta$. Then the mixture measure $M$ on $\mathcal{X}$ is defined by:
+\[
+  M(A) \stackrel{\triangle}{=} \int_{\Theta} Q_{\theta}(A) \pi(\d{\theta}) \quad, \text{ for all measurable sets } A \subseteq \mathcal{X}
+\]
+
+For example, for a mixture of Gaussians, then $Q_{\theta}$ is a Gaussian distribution on $\mathbb{R}^{d}$, i.e. 
+\[
+  \mathcal{Q}_{\theta}(A) = \mathcal{N}(\bm{x} \, | \,  \bm{u}(\theta), \Sigma(\theta)) (A)
+\]
+and:
+\[
+  M(A) = \int_{\Theta} \Big[ \mathcal{N}(\bm{x} \, | \, \bm{u}(\theta), \Sigma(\theta) (A) \Big] \pi(\d{\theta})
+\]
+
+
+  In the context of latent-variable model, let $\Theta = \mathcal{Z}$. We have that each component distribution
+  \[
+    Q_{\bm{z}}(\bm{x} ) = \mathcal{N}( \bm{x} \, | \,  \bm{u}_{\theta}(\bm{z}), \Sigma)
+  \]
+  the "index distribution" $\pi$ is the prior measure on $\bm{z}$, i.e. $p(\bm{z})$, and we get:
+  \[
+    p_{\theta}(\bm{x}) = \int_{\mathcal{Z}} \Big[ \mathcal{N} (\bm{x} \, | \,  \mu_{\theta}(\bm{z}), \Sigma \Big] p(\d{\bm{z}})
+  \]
+\end{definition}
+
 \section{Summary}
-Assume we have $n$ data vectors (e.g. images),  $\bm{x}_1, \ldots  \bm{x}_n$, each $\bm{x}_i \in \mathbb{R}^{d}$. 
-We assume the data was generated via a latent variable model: There is a latent space $\mathcal{Z} \subseteq \mathbb{R}^{k}$, and $\bm{z} \sim p_{\bm{z}}$. 
-We assume there is some continuous, invertible function $\bm{f} : \mathcal{Z} \to \mathcal{X}$, that generates the data, i.e.  $\bm{f}(\bm{z}) = \bm{x}$. 
-This induces a distribution $p ^{\ast}(\bm{x})$ over the data space $\mathcal{X}$, which we wish to learn / estimate from the observed data $\bm{x}_1, \ldots, \bm{x}_n$. 
-We assume $p ^{\ast}(\bm{x})$ belongs to some parametric family $\Theta$, and we wish to learn $\theta$ of $p_{\theta}(\bm{x})$. 
+We wish to learn a probabilistic \ul{generative} model of observable variables $\bm{x} \in \mathcal{X}$, where $\mathcal{X}$ is an $r$-dimensional manifold, embedded in $\mathbb{R}^{d}$, where we assume $r << d$. 
+We assume there is a ground-truth probability measure $\mu_{gt}$ on $\mathcal{X}$, according to which our samples $\left\{ \bm{x}_i \right\}_{i=1}^{n}$ were obtained. 
+We approximate this ground-truth measure using a parametrized density $p_{\theta}(\bm{x})$, defined across all $\mathbb{R}^{d}$. If $p_{\theta}(\bm{x})$ is a simple parametric family, then we can estimate $\theta$ from $\left\{  \bm{x}_i \right\}$ using MLE. However, for many important cases, the assumption that $\theta$ is simple is unrealistic. 
 
-Unfortunately, common methods like MLE can estimate $\theta$ only when $\Theta$ is a very simple family (like Gaussian), which is an unrealistic assumption for images. 
+We will use the example where $\left\{ \bm{x}_i \right\}_{i=1}^{n}$ are BW-images of digits. Then,  $d = H \times  W$, and $\mu_{gt}$ is defined on the $[0-255]^{H \times  W}$ pixels subspace. 
+We can think of this as some sparse, low-dimensional manifold:
+\begin{figure}[H] \centering \includegraphics[height=0.2\textheight,width=0.9\textwidth,keepaspectratio]{lowDimensionalManifold} \caption{Low dimensional sparse manifold} \label{fig:lowDimensionalManifold} \end{figure}
 
 
+  Further, we assume that this parameterized density $p_{\theta}(\bm{x})$ admits a latent decomposition (explained below):
+
+\begin{equation} \label{eq:marginalLikelihood2}
+  p_{\theta}(\bm{x}) = \int p_{\theta}(\bm{x} | \bm{z}) p(\bm{z}) \d{\bm{z}} \tag{Marginal Prob.}
+\end{equation}
+where $\bm{z} \in \mathbb{R}^{k}$ serves as a low-dimensional representation, with $k \approx r$.
+
+In our BW digit images example, we can think of the latent variables $\bm{z}$ as encoding digit-identity, slant, stroke-width, etc. What does it mean that "$p_{\theta}(\bm{x})$ admits a latent-space decomposition"? 
+We believe there is some (measurable-map) diffeomorphism $\bm{f}_{\theta}(\bm{z}) : \mathcal{Z} \to \mathcal{X}$, and some prior $p_{\bm{z}}(\bm{z})$ on $\mathcal{Z}$, such that $\bm{x} = \bm{f}_{\theta}(\bm{z})$, viewed as a random variable, induces a measure on $\mathcal{X}$ similar to $p_{\theta}(\bm{x})$. 
+
+We can optimize $\theta$ without making assumptions on $p_{\theta}(\bm{x} | \bm{z})$ (called implicit generative models, e.g. GANs), but often we assume that $\bm{x}$ is generated from $\bm{f}_{\theta}(\bm{z})$ by adding some Gaussian noise. We write this as:
+\begin{equation} \label{eq:posteriorGaussianAssumption}
+  p_{\theta}(\bm{x} | \bm{z}) \sim  \mathcal{N}(\bm{\mu}_{\theta}(\bm{z}), \Sigma)
+\end{equation}
+
+Note - this notation is confusing. In fact, since both $\bm{\mu}_{\theta}(\bm{z})$ and $\mathcal{N}$ are distributions, we have a mixture-of-Gaussians distribution.  Formally,
+\[
+  p_{\theta}(\bm{x}) = \int_{\mathcal{Z}} \mathcal{N}(\bm{x} \, | \, \mu_{\theta}(\bm{z}), \Sigma) \ p(\bm{z}) \d{\bm{z}}
+\]
+This is often written by defining $\bm{\epsilon} \sim \mathcal{N}(\bm{0}, \Sigma)$, independent of $\bm{z}$, and then define the function:
+\begin{gather*}
+  G_{\theta}: \mathcal{Z} \times \mathbb{R}^{d} \to \mathbb{R}^{d} \\ 
+  G_{\theta}(\bm{z}, \bm{\epsilon}) = \bm{\mu}_{\theta}(\bm{z}) + \bm{\epsilon},  \quad  \bm{\epsilon} \sim  \mathcal{N}(\bm{0}, \Sigma)
+\end{gather*}
+
+ --------------------------------------------- 
+
+In addition, we do not wish to explicitly fix $p_{\theta}(\bm{z})$, since determining the type and relationships of the latent space is intractable. VAE solves this by assuming $p_{\theta}(\bm{z}) \sim  \mathcal{N}(\bm{0}, \bm{I})$, and then we have:
+\[
+  p_{\theta}(\bm{x} | \bm{z}) = \mathcal{N}(\bm{x} \, | \,  \mu_{\theta}(\bm{z}), \Sigma) \quad, \bm{z} \sim  \mathcal{N}(\bm{0}, \bm{I})
+\] 
+This is justified because we know that using a sufficiently complex function, we can simulate any distribution from a standard Gaussian. See for example~\cref{fig:inverseTransformSampling}. 
+\begin{figure}[H] \centering \includegraphics[height=0.3\textheight,width=0.9\textwidth,keepaspectratio]{inverseTransformSampling} \caption{Inverse transform sampling} \label{fig:inverseTransformSampling}  \end{figure}
+Therefore, we can imagine our neural network $\mu_{\theta}(\bm{z})$ first converting the standard Gaussian $\bm{z}$ into the "real" latent variable $\bm{z}'$, and then, using the latent representation $\bm{z}'$, converting that into the expected pixel value. 
+
+---------------------------------------------
+
+Recall we have that:
+\[
+  p_{\theta}(\bm{x}) = \int_{\mathcal{Z}} p_{\theta}(\bm{x} | \bm{z}) p(\bm{z}) \d{\bm{z}}
+\]
+Since we have analytic expressions for $p_{\theta}(\bm{x} | \bm{z})$ and $p(\bm{z})$, 
+We can approximate the likelihood by drawing $S$ samples $\left\{ z^{(s)} \right\} \sim p_{\bm{z}}(\bm{z})$, and computing:
+\[
+  p_{\theta}(\bm{x}) \approx \frac{1}{S} \sum_{s=1}^{S} \mathcal{N}( \bm{x} \, | \,  \bm{\mu}_{\theta}(z^{(s)}), \sigma I)
+\]
+However, for high dimensional $d$, this will require a very large amount of samples to get an accurate estimation. A reason is given in Doresch / Introduction to VAE. 
+
+We use the following shortcut: We know that for a given $\bm{x}$, for most $\bm{z}$, we will have that  $p_{\theta}(\bm{x} | \bm{z})$ will be close to zero, and hence won't contribute to approximating $p_{\theta}(\bm{x})$. 
+We therefore wish to sample only those $\bm{z}$ s.t. $p_{\theta}(\bm{x} | \bm{z})$ will be high, and estimate $p_{\theta}(\bm{x})$ using those. 
+We do so by introducing a new parametric function $q_{\phi}(\bm{z} | \bm{x})$, which we aptly name as a \textit{recognition} model, or an \textit{encoder}.
+
+\begin{remark}[Implicit (likelihood-free) Generative models] We wish to find $\theta$  that will optimize~\cref{eq:marginalLikelihood2}. 
+
+Without assuming some analytic form on $p_{\theta}(\bm{x})$, this can be done for example using GANs. 
+We produce $\bm{x}_{\text{fake}} \sim  p_{\theta}(\bm{x})$, and a discriminator $D_{\phi}$ to distinguish between $\bm{x}_{\text{real}} \sim  p_{\text{data}}$ and $\bm{x}_{\text{fake}} \sim p_{\theta}(\bm{x})$.  
+By iteratively updating $\theta$ to fool the discriminator, and $\phi$ to improve the discriminator, one effectively brings $p_{\theta}(\bm{x})$ closer to $p_{\text{data}}(\bm{x})$
+\end{remark}
+
+\begin{remark}
+Note - VAE assumes that $\bm{f}_{\theta}(\bm{z})$ outputs the mean of the pixel value, for a Gaussian distribution. If instead we assume that $\bm{f}_{\theta}(\bm{z})$ outputs the exact pixel value, then $\bm{x}= \bm{f}_{\theta}(\bm{z})$ is a deterministic distribution (a delta distribution). 
+Computing the gradients under a Gaussian assumption, i.e.:
+\[
+  p_{\theta}(\bm{x} | \bm{z}) \sim  \mathcal{N}(\bm{x} \, | \, \bm{f}_{\theta}(\bm{z}), \Sigma)
+\]
+  is smoother than computing gradients for a Dirac delta distribution. 
+\end{remark}
 
 \end{document}
 
