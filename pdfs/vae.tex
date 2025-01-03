@@ -519,7 +519,7 @@ and:
 \end{definition}
 
 \section{Summary}
-We wish to learn a probabilistic \ul{generative} model of observable variables $\bm{x} \in \mathcal{X}$, where $\mathcal{X}$ is an $r$-dimensional manifold, embedded in $\mathbb{R}^{d}$, where we assume $r << d$. 
+We wish to learn a probabilistic \ul{generative} model of observable variables $\bm{x} \in \mathcal{X}$, where $\mathcal{X}$ is an $r$-dimensional manifold, embedded in $\mathbb{R}^{d}$. In many cases, we have that $r << d$,. 
 We assume there is a ground-truth probability measure $\mu_{gt}$ on $\mathcal{X}$, according to which our samples $\left\{ \bm{x}_i \right\}_{i=1}^{n}$ were obtained. 
 We approximate this ground-truth measure using a parametrized density $p_{\theta}(\bm{x})$, defined across all $\mathbb{R}^{d}$. If $p_{\theta}(\bm{x})$ is a simple parametric family, then we can estimate $\theta$ from $\left\{  \bm{x}_i \right\}$ using MLE. However, for many important cases, the assumption that $\theta$ is simple is unrealistic. 
 
